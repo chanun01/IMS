@@ -5,7 +5,7 @@
 
 // 🔴 REQUIRED: ใส่ URL ของ Google Apps Script Web App ที่นี่
 // วิธีหา URL: ใน Apps Script Editor → Deploy → Manage deployments → Copy URL
-window.GAS_URL = 'https://script.google.com/macros/library/d/1DjaPJl3G0X03LqVITQVvNlZeAstZn04g7s0ljDc7c4dE-5eDjQMFW3_R/1';
+window.GAS_URL = 'https://script.google.com/macros/s/AKfycbwPUxMbuLcSl4XkECJsC8Eq40bF6kLkUPpqhGvaBBodtAt0nNr46T61eF2t-02lA-QgIg/exec';
 
 // ══════════════════════════════════════════════════════════════════
 //  วิธีตั้งค่า (Setup Guide)
