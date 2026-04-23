@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ระบบจัดการพัสดุ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --ink:#0c1a2e;--ink-2:#162540;--ink-3:#1e3358;
+  --gold:#d4a017;--gold-l:#f0c040;
+  --bg:#f0f4fa;--bg-2:#e8edf7;
+  --surface:#fff;--surface-2:#f7f9fc;
+  --border:#dde3ef;--text:#1a2540;--muted:#6b7a99;--light:#9aa5c0;
+  --blue:#2c5fe8;--green:#1fa672;--red:#d94040;--orange:#e08020;--teal:#0e9080;
+  --sidebar-w:250px;--header-h:58px;--r:12px;--r-lg:18px;
+  --shadow:0 2px 10px rgba(26,37,64,.07);--shadow-md:0 8px 28px rgba(26,37,64,.11);
+}
+body.dark{
+  --bg:#0c1420;--bg-2:#111b2e;--surface:#162035;--surface-2:#1c2a45;
+  --border:rgba(255,255,255,.08);--text:#e2e8f8;--muted:#7a8aaa;--light:#4a5878;
+  --shadow:0 2px 10px rgba(0,0,0,.4);--shadow-md:0 8px 28px rgba(0,0,0,.5);
+}
+body{font-family:'Noto Sans Thai',sans-serif;background:var(--bg);color:var(--text);margin:0;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:linear-gradient(180deg,var(--ink-2),var(--ink));z-index:1000;display:flex;flex-direction:column;transition:transform .3s;box-shadow:4px 0 20px rgba(0,0,0,.2)}
+.sidebar-brand{padding:16px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:12px}
+.brand-logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--gold-l));display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.brand-title{font-size:.88rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:165px}
+.brand-sub{font-size:.58rem;color:var(--gold);font-family:'IBM Plex Mono',monospace;letter-spacing:1.5px;margin-top:2px}
+.sidebar-user{margin:8px 8px 4px;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;display:flex;align-items:center;gap:10px}
+.sidebar-ava{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:var(--ink);flex-shrink:0}
+.su-name{font-size:.8rem;font-weight:600;color:#fff;line-height:1.2}
+.su-dept{font-size:.64rem;color:rgba(255,255,255,.4)}
+.sidebar-nav{flex:1;overflow-y:auto;padding:6px 8px;scrollbar-width:none}
+.sidebar-nav::-webkit-scrollbar{display:none}
+.nav-sec{font-size:.58rem;font-weight:700;color:rgba(255,255,255,.25);letter-spacing:2px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;padding:12px 10px 4px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.55);font-size:.85rem;font-weight:500;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;transition:all .18s;position:relative}
+.nav-btn:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-btn.active{background:rgba(212,160,23,.12);color:#f0c040;font-weight:600}
+.nav-btn.active::before{content:'';position:absolute;left:0;top:20%;height:60%;width:3px;background:var(--gold);border-radius:0 3px 3px 0}
+.nav-icon{font-size:.95rem;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:.58rem;font-weight:700;padding:2px 6px;border-radius:20px;min-width:18px;text-align:center;font-family:'IBM Plex Mono',monospace}
+.sidebar-footer{padding:10px 8px;border-top:1px solid rgba(255,255,255,.05)}
+.btn-logout{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;background:rgba(217,64,64,.08);border:1px solid rgba(217,64,64,.18);border-radius:8px;color:#e05555;font-family:'Noto Sans Thai',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-logout:hover{background:rgba(217,64,64,.18)}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.topbar-ham{display:none;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text)}
+.topbar-title{font-size:.95rem;font-weight:700;color:var(--text);flex:1}
+.topbar-clock{font-size:.7rem;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+.page-content{flex:1;padding:22px}
+.section{display:none}
+.section.active{display:block;animation:fadeS .2s ease}
+@keyframes fadeS{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PIN OVERLAY ── */
+.pin-overlay{position:fixed;inset:0;background:linear-gradient(135deg,var(--ink-2),var(--ink));z-index:9999;display:flex;align-items:center;justify-content:center}
+.pin-box{width:340px;padding:32px;text-align:center}
+.pin-logo{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--gold),var(--gold-l));display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 20px}
+.pin-title{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:4px}
+.pin-sub{font-size:.8rem;color:rgba(255,255,255,.5);margin-bottom:24px}
+.pin-user-sel{width:100%;padding:11px 14px;border:1.5px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;font-family:'Noto Sans Thai',sans-serif;font-size:.9rem;outline:none;margin-bottom:14px;cursor:pointer}
+.pin-user-sel option{color:#000;background:#fff}
+.pin-dots{display:flex;justify-content:center;gap:10px;margin:18px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:transparent;transition:all .15s}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.pin-key{padding:16px;border:1.5px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.05);color:#fff;font-size:1.2rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Noto Sans Thai',sans-serif}
+.pin-key:hover{background:rgba(255,255,255,.12)}
+.pin-key:active{transform:scale(.94)}
+.pin-key.del{font-size:1rem;color:rgba(255,255,255,.5)}
+.pin-key.zero{grid-column:2}
+.pin-msg{font-size:.8rem;color:rgba(255,255,255,.5);margin-top:14px;min-height:18px}
+.pin-msg.err{color:#e05555}
+.pin-msg.ok{color:#1fa672}
+.pin-new-form{display:none;margin-top:14px}
+.pin-new-form input{width:100%;padding:10px 14px;border:1.5px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.06);color:#fff;font-size:.9rem;font-family:'Noto Sans Thai',monospace;outline:none;margin-bottom:8px;text-align:center;letter-spacing:4px}
+.pin-new-form input::placeholder{color:rgba(255,255,255,.3);letter-spacing:0}
+
+/* ── CARDS / STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border-radius:var(--r);padding:18px;border:1px solid var(--border);box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .2s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-accent{position:absolute;bottom:0;left:0;right:0;height:3px}
+.stat-icon{font-size:1.4rem;margin-bottom:7px;display:block}
+.stat-val{font-size:1.8rem;font-weight:800;color:var(--text);line-height:1;font-family:'IBM Plex Mono',monospace}
+.stat-label{font-size:.72rem;color:var(--muted);margin-top:4px;font-weight:600}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
+.card-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-size:.92rem;font-weight:700;color:var(--text);margin:0;display:flex;align-items:center;gap:7px}
+.card-body{padding:18px}
+.page-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.page-hd h1{font-size:1.3rem;font-weight:800;color:var(--text);margin:0 0 3px}
+.page-hd p{margin:0;font-size:.8rem;color:var(--muted)}
+.page-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto}
+table.dt{width:100%;border-collapse:collapse}
+.dt thead th{padding:10px 14px;text-align:left;font-size:.65rem;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;background:var(--surface-2);border-bottom:2px solid var(--border);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.dt tbody td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:.86rem;vertical-align:middle}
+.dt tbody tr:last-child td{border-bottom:none}
+.dt tbody tr:hover{background:rgba(44,95,232,.03)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 15px;border-radius:8px;font-family:'Noto Sans Thai',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;transition:all .18s;border:none;text-decoration:none;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-warning{background:var(--orange);color:#fff}
+.btn-navy{background:var(--ink-3);color:#fff}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:var(--ink)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-sm{padding:5px 10px;font-size:.77rem;border-radius:7px}
+.btn-icon{padding:6px;border-radius:7px}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.66rem;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.bs{background:rgba(31,166,114,.1);color:#198860}
+.bd{background:rgba(217,64,64,.1);color:#c03030}
+.bw{background:rgba(224,128,32,.1);color:#a06020}
+.bb{background:rgba(44,95,232,.1);color:#2050c0}
+.bn{background:rgba(12,26,46,.08);color:var(--ink-3)}
+.bt{background:rgba(14,144,128,.1);color:#087860}
+
+/* ── FORMS ── */
+.fg{margin-bottom:14px}
+.flabel{display:block;font-size:.68rem;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.8px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace}
+.fc,.fs{width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:'Noto Sans Thai',sans-serif;font-size:.87rem;color:var(--text);background:var(--surface);outline:none;transition:all .2s}
+.fc:focus,.fs:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(44,95,232,.1)}
+.fc::placeholder{color:var(--light)}
+.frow-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.frow-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+textarea.fc{min-height:70px;resize:vertical}
+.inline-sel{padding:5px 9px;border:1.5px solid var(--border);border-radius:7px;font-family:'Noto Sans Thai',sans-serif;font-size:.78rem;background:var(--surface);color:var(--text)}
+
+/* ── PRODUCT GRID ── */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.prod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:all .22s;cursor:pointer}
+.prod-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--blue)}
+.prod-img{height:130px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden}
+.prod-img img{width:100%;height:100%;object-fit:cover}
+.prod-body{padding:12px}
+.prod-name{font-size:.86rem;font-weight:700;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prod-meta{font-size:.72rem;color:var(--muted);margin-bottom:7px}
+.prod-stock{font-size:.78rem;font-weight:700}
+.s-ok{color:var(--green)}.s-low{color:var(--red)}
+
+/* ── CART FAB ── */
+.cart-fab{position:fixed;bottom:22px;right:22px;width:52px;height:52px;background:linear-gradient(135deg,var(--gold),var(--gold-l));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 8px 24px rgba(212,160,23,.45);cursor:pointer;border:none;transition:all .22s;z-index:500}
+.cart-fab:hover{transform:scale(1.1)}
+.cart-cnt{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:.58rem;font-weight:800;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;border:2px solid var(--bg)}
+.cart-hide{display:none!important}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.filter-bar .fg{margin-bottom:0;flex:1;min-width:120px}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--light);pointer-events:none}
+.search-input{width:100%;padding:9px 13px 9px 34px;border:1.5px solid var(--border);border-radius:8px;font-family:'Noto Sans Thai',sans-serif;font-size:.85rem;color:var(--text);background:var(--surface);outline:none;transition:all .2s}
+.search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(44,95,232,.1)}
+
+/* ── SETTINGS TABS ── */
+.stab-wrap{display:flex;gap:4px;background:var(--surface-2);border-radius:10px;padding:4px;margin-bottom:18px;border:1px solid var(--border);flex-wrap:wrap}
+.stab{flex:1;min-width:80px;padding:7px;border:none;background:transparent;color:var(--muted);font-family:'Noto Sans Thai',sans-serif;font-size:.8rem;font-weight:600;border-radius:7px;cursor:pointer;transition:all .2s;text-align:center}
+.stab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+
+/* ── SCANNER ── */
+.scanner-video-wrap{position:relative;width:100%;background:#000;border-radius:10px;overflow:hidden}
+#scannerVideo{width:100%;display:block;max-height:280px;object-fit:cover}
+.scan-guide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-box{width:70%;max-width:260px;height:120px;border:2px solid var(--gold);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.4)}
+.scan-corners::before,.scan-corners::after{content:'';position:absolute;width:18px;height:18px;border-color:var(--gold);border-style:solid}
+.scan-corners::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.scan-corners::after{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;left:50%;transform:translateX(-50%);width:60%;max-width:220px;height:2px;background:var(--gold);opacity:.8;animation:scanLine 1.6s ease-in-out infinite}
+@keyframes scanLine{0%,100%{top:25%}50%{top:74%}}
+.scan-result-badge{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:6px 14px;border-radius:20px;font-size:.8rem;font-family:'IBM Plex Mono',monospace;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis;display:none}
+
+/* ── MISC ── */
+.mono{font-family:'IBM Plex Mono',monospace}
+.txt-m{color:var(--muted)!important}
+.txt-s{font-size:.74rem}
+.fw7{font-weight:700}
+.img-th{width:40px;height:40px;object-fit:cover;border-radius:7px;border:1px solid var(--border)}
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-icon{font-size:2.6rem;margin-bottom:10px}
+.spin-sm{width:14px;height:14px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.act-btns{display:flex;gap:4px}
+.chart-box{position:relative;height:230px}
+.modal-content{border-radius:18px!important;border:none!important;box-shadow:0 24px 80px rgba(0,0,0,.2)!important;font-family:'Noto Sans Thai',sans-serif}
+.modal-header{padding:14px 18px!important;border-bottom:1px solid var(--border)!important}
+.modal-title{font-size:.95rem!important;font-weight:700!important}
+.modal-body{padding:18px!important}
+.modal-footer{padding:12px 18px!important;border-top:1px solid var(--border)!important;gap:7px!important}
+.swal2-popup{font-family:'Noto Sans Thai',sans-serif!important;border-radius:16px!important}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999}
+.alert-strip{padding:10px 14px;background:rgba(217,64,64,.06);border:1px solid rgba(217,64,64,.18);border-left:4px solid var(--red);border-radius:10px;display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.84rem}
+body.dark .sidebar{background:linear-gradient(180deg,#0d1828,#090f1a)}
+body.dark .topbar{background:var(--bg-2);border-bottom-color:var(--border)}
+body.dark .card{background:var(--surface);border-color:var(--border)}
+body.dark .fc,.body.dark .fs{background:rgba(255,255,255,.06);border-color:var(--border);color:var(--text)}
+body.dark .modal-content{background:var(--surface)!important;color:var(--text)!important}
+body.dark .swal2-popup{background:var(--surface)!important;color:var(--text)!important}
+body.dark table.dt thead th{background:var(--bg-2)!important;color:var(--muted)!important}
+body.dark table.dt tbody td{color:var(--text)!important;border-bottom-color:var(--border)!important}
+body.dark .inline-sel{background:var(--surface-2);color:var(--text);border-color:var(--border)}
+body.dark .stab-wrap{background:var(--bg-2)}
+body.dark .stab.active{background:var(--surface);color:var(--text)}
+body.dark .filter-bar{background:var(--surface);border-color:var(--border)}
+body.dark .prod-card{background:var(--surface);border-color:var(--border)}
+body.dark .search-input{background:rgba(255,255,255,.06);color:var(--text);border-color:var(--border)}
+body.dark .pin-overlay{background:linear-gradient(135deg,#0d1828,#090f1a)}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:block;opacity:0;pointer-events:none;transition:opacity .3s}.sidebar-overlay.open{opacity:1;pointer-events:auto}
+  .main{margin-left:0}.topbar-ham{display:flex}
+  .page-content{padding:14px}.stats-grid{grid-template-columns:repeat(2,1fr)}
+  .prod-grid{grid-template-columns:repeat(2,1fr)}.frow-2,.frow-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ PIN OVERLAY ══════════════════════════════════════════════ -->
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-box">
+    <div class="pin-logo" id="pinLogo">📦</div>
+    <div class="pin-title" id="pinTitle">ระบบจัดการพัสดุ</div>
+    <div class="pin-sub" id="pinSub">เลือกชื่อและใส่ PIN เพื่อเข้าใช้งาน</div>
+
+    <select class="pin-user-sel" id="pinUserSel" onchange="onUserSelect()">
+      <option value="">— กำลังโหลดรายชื่อ... —</option>
+    </select>
+
+    <!-- PIN dots -->
+    <div class="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+      <div class="pin-dot" id="d4"></div>
+      <div class="pin-dot" id="d5"></div>
+    </div>
+
+    <!-- PIN keypad -->
+    <div class="pin-pad" id="pinPad">
+      <button class="pin-key" onclick="pinPress(1)">1</button>
+      <button class="pin-key" onclick="pinPress(2)">2</button>
+      <button class="pin-key" onclick="pinPress(3)">3</button>
+      <button class="pin-key" onclick="pinPress(4)">4</button>
+      <button class="pin-key" onclick="pinPress(5)">5</button>
+      <button class="pin-key" onclick="pinPress(6)">6</button>
+      <button class="pin-key" onclick="pinPress(7)">7</button>
+      <button class="pin-key" onclick="pinPress(8)">8</button>
+      <button class="pin-key" onclick="pinPress(9)">9</button>
+      <button class="pin-key del" onclick="pinDel()">⌫</button>
+      <button class="pin-key zero" onclick="pinPress(0)">0</button>
+      <button class="pin-key" onclick="pinClear()" style="font-size:.72rem;color:rgba(255,255,255,.4)">ล้าง</button>
+    </div>
+
+    <!-- New PIN form (first time) -->
+    <div class="pin-new-form" id="pinNewForm">
+      <p style="color:rgba(255,255,255,.7);font-size:.82rem;margin-bottom:10px">กำหนด PIN สำหรับใช้เข้าสู่ระบบ (4-6 หลัก)</p>
+      <input type="password" inputmode="numeric" maxlength="6" placeholder="PIN ใหม่" id="pinNew1">
+      <input type="password" inputmode="numeric" maxlength="6" placeholder="ยืนยัน PIN อีกครั้ง" id="pinNew2">
+      <button class="btn btn-gold" style="width:100%;margin-top:4px;justify-content:center" onclick="submitNewPin()">✅ กำหนด PIN</button>
+    </div>
+
+    <div class="pin-msg" id="pinMsg"></div>
+  </div>
+</div>
+
+<!-- ══ SIDEBAR OVERLAY ════════════════════════════════════════ -->
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ══ SIDEBAR ═══════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <a class="sidebar-brand" href="#" onclick="showSection('home')">
+    <div class="brand-logo" id="sidebarLogo">📦</div>
+    <div>
+      <div class="brand-title" id="sidebarTitle">ระบบจัดการพัสดุ</div>
+      <div class="brand-sub">IMS v4.0 · GITHUB PAGES</div>
+    </div>
+  </a>
+  <div class="sidebar-user">
+    <div class="sidebar-ava" id="sidebarAva">?</div>
+    <div>
+      <div class="su-name" id="sidebarName">—</div>
+      <div class="su-dept" id="sidebarDept">—</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <button class="btn-logout" onclick="logout()">🚪 ออกจากระบบ</button>
+  </div>
+</aside>
+
+<!-- ══ MAIN ════════════════════════════════════════════════== -->
+<div class="main">
+  <header class="topbar">
+    <button class="topbar-ham" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-title" id="topbarTitle">หน้าหลัก</div>
+    <div class="topbar-clock mono" id="clock"></div>
+    <button onclick="toggleTheme()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:.9rem;cursor:pointer;color:var(--text);transition:all .2s" id="themeBtn">🌙</button>
+    <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:var(--ink);cursor:pointer" id="topAva" onclick="showSection('profile')">-</div>
+  </header>
+  <main class="page-content">
+
+    <!-- HOME -->
+    <div class="section active" id="section-home">
+      <div class="page-hd">
+        <div><h1 id="welcomeTxt">ยินดีต้อนรับ</h1><p>ภาพรวมระบบจัดการพัสดุ</p></div>
+        <div class="page-actions"><button class="btn btn-ghost btn-sm" onclick="loadDashboard()">🔄 รีเฟรช</button></div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-accent" style="background:var(--blue)"></div><span class="stat-icon">📦</span><div class="stat-val" id="s1">—</div><div class="stat-label">พัสดุทั้งหมด</div></div>
+        <div class="stat-card"><div class="stat-accent" style="background:var(--red)"></div><span class="stat-icon">⚠️</span><div class="stat-val" id="s2">—</div><div class="stat-label">ใกล้หมดสต็อก</div></div>
+        <div class="stat-card"><div class="stat-accent" style="background:var(--orange)"></div><span class="stat-icon">⏳</span><div class="stat-val" id="s3">—</div><div class="stat-label">รออนุมัติ</div></div>
+        <div class="stat-card"><div class="stat-accent" style="background:var(--green)"></div><span class="stat-icon">🛒</span><div class="stat-val" id="s4">—</div><div class="stat-label">เบิกวันนี้</div></div>
+        <div class="stat-card admin-only" style="display:none"><div class="stat-accent" style="background:var(--teal)"></div><span class="stat-icon">💰</span><div class="stat-val mono" id="s5" style="font-size:1.3rem">—</div><div class="stat-label">มูลค่าสต็อก (฿)</div></div>
+      </div>
+      <div class="frow-2" style="gap:16px">
+        <div class="card admin-only" style="display:none">
+          <div class="card-hd"><h2 class="card-title">🚨 สต็อกวิกฤต</h2></div>
+          <div class="table-wrap">
+            <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อพัสดุ</th><th>คงเหลือ</th><th>Min</th></tr></thead>
+            <tbody id="lowStockTb"></tbody></table>
+          </div>
+        </div>
+        <div class="card admin-only" style="display:none">
+          <div class="card-hd"><h2 class="card-title">📈 แนวโน้มการเบิก</h2></div>
+          <div class="card-body"><div class="chart-box"><canvas id="trendChart"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUEST -->
+    <div class="section" id="section-request">
+      <div class="page-hd">
+        <div><h1>🛒 เบิกพัสดุ</h1><p>เลือกพัสดุและใส่ตะกร้า</p></div>
+        <div class="page-actions">
+          <button class="btn btn-navy btn-sm" onclick="openCameraScanner('request')">📷 สแกน</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadProdForReq()">🔄</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" class="search-input" id="reqSearch" placeholder="ค้นหาชื่อ/รหัส/บาร์โค้ด..." oninput="filterProdGrid()"></div>
+        <select class="fc" style="max-width:180px" id="reqCatFilter" onchange="filterProdGrid()"><option value="">ทุกหมวดหมู่</option></select>
+      </div>
+      <div class="prod-grid" id="prodGrid"><div class="empty"><div class="spin-sm"></div> กำลังโหลด...</div></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="section" id="section-history">
+      <div class="page-hd">
+        <div><h1>📜 ประวัติการเบิก</h1><p>ตรวจสอบรายการ</p></div>
+        <div class="page-actions"><button class="btn btn-ghost btn-sm" onclick="loadHistory()">🔄</button></div>
+      </div>
+      <div class="filter-bar">
+        <div class="fg admin-only" style="display:none;min-width:140px"><label class="flabel">ผู้เบิก</label><input type="text" class="fc" id="hUser" oninput="loadHistory()"></div>
+        <div class="fg" style="min-width:140px"><label class="flabel">ชื่อพัสดุ</label><input type="text" class="fc" id="hProd" oninput="loadHistory()"></div>
+        <div class="fg" style="min-width:120px"><label class="flabel">ช่วงเวลา</label>
+          <select class="fc" id="hPeriod" onchange="loadHistory()"><option value="">ทั้งหมด</option><option value="day">วันนี้</option><option value="week">7 วัน</option><option value="month">เดือนนี้</option><option value="year">ปีนี้</option></select>
+        </div>
+        <div class="fg" style="min-width:110px"><label class="flabel">สถานะ</label>
+          <select class="fc" id="hStatus" onchange="loadHistory()"><option value="all">ทั้งหมด</option><option value="Approved">อนุมัติ</option><option value="Pending">รออนุมัติ</option><option value="Rejected">ไม่อนุมัติ</option></select>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="resetHistFilter()" style="align-self:flex-end">♻️</button>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table class="dt" id="histTable"><thead><tr><th>รหัสคำขอ</th><th>วันที่</th><th>ผู้เบิก</th><th>ฝ่าย</th><th>พัสดุ</th><th>จำนวน</th><th>วัตถุประสงค์</th><th>สถานะ</th></tr></thead>
+        <tbody id="histTb"></tbody></table>
+      </div></div>
+    </div>
+
+    <!-- PRODUCTS (Admin) -->
+    <div class="section" id="section-products">
+      <div class="page-hd">
+        <div><h1>📦 จัดการพัสดุ</h1><p>ฐานข้อมูลพัสดุทั้งหมด</p></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openCameraScanner('products')">📷 สแกน</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadProducts()">🔄</button>
+          <button class="btn btn-gold" onclick="openProdModal()">➕ เพิ่มพัสดุ</button>
+        </div>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table class="dt" id="prodTable"><thead><tr><th>รูป</th><th>รหัส/บาร์โค้ด</th><th>ชื่อพัสดุ</th><th>หมวดหมู่</th><th>คงเหลือ</th><th>ราคา</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+        <tbody id="prodTb"></tbody></table>
+      </div></div>
+    </div>
+
+    <!-- INBOUND (Admin) -->
+    <div class="section" id="section-inbound">
+      <div class="page-hd">
+        <div><h1>📥 รับเข้าพัสดุ</h1><p>บันทึก Lot และอัปเดตสต็อก</p></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="loadLots()">🔄</button>
+          <button class="btn btn-navy" onclick="openInboundModal()">➕ รับเข้า</button>
+        </div>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table class="dt" id="lotsTable"><thead><tr><th>Lot ID</th><th>ชื่อพัสดุ</th><th>ซัพพลายเออร์</th><th>วันรับ</th><th>จำนวน</th><th>มูลค่า</th></tr></thead>
+        <tbody id="lotsTb"></tbody></table>
+      </div></div>
+    </div>
+
+    <!-- APPROVALS (Admin) -->
+    <div class="section" id="section-approvals">
+      <div class="page-hd">
+        <div><h1>✅ อนุมัติการเบิก</h1><p>รายการรอการพิจารณา</p></div>
+        <div class="page-actions">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:.76rem;color:var(--muted);font-weight:600">Auto-approve</span>
+            <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="autoToggle" onchange="saveAutoApprove()"></div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadRequests()">🔄</button>
+        </div>
+      </div>
+      <div class="card mb-3" id="bulkBar" style="display:none">
+        <div class="card-body" style="padding:10px 18px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:.8rem;font-weight:700" id="bulkCnt">0 รายการ</span>
+            <button class="btn btn-success btn-sm" onclick="doBulk('Approved')">✅ อนุมัติ</button>
+            <button class="btn btn-danger btn-sm" onclick="doBulk('Rejected')">❌ ปฏิเสธ</button>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table class="dt" id="apvTable"><thead><tr><th><input type="checkbox" id="selAll" onchange="toggleAll(this)"></th><th>รหัสคำขอ</th><th>ผู้เบิก</th><th>ฝ่าย</th><th>พัสดุ</th><th>จำนวน</th><th>วัตถุประสงค์</th><th>วันที่</th><th>จัดการ</th></tr></thead>
+        <tbody id="apvTb"></tbody></table>
+      </div></div>
+    </div>
+
+    <!-- USERS (Admin) -->
+    <div class="section" id="section-users">
+      <div class="page-hd">
+        <div><h1>👥 จัดการผู้ใช้งาน</h1><p>เพิ่ม/แก้ไขสิทธิ์และสถานะ</p></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="loadUsers()">🔄</button>
+          <button class="btn btn-navy" onclick="openAddUserModal()">➕ เพิ่มผู้ใช้</button>
+        </div>
+      </div>
+      <div class="card"><div class="table-wrap">
+        <table class="dt" id="usersTable"><thead><tr><th>รหัส</th><th>ชื่อ-สกุล</th><th>ฝ่าย</th><th>สิทธิ์</th><th>สถานะ</th><th>PIN</th><th>เข้าล่าสุด</th><th>จัดการ</th></tr></thead>
+        <tbody id="usersTb"></tbody></table>
+      </div></div>
+    </div>
+
+    <!-- SETTINGS (Admin) -->
+    <div class="section" id="section-settings">
+      <div class="page-hd"><div><h1>⚙️ ตั้งค่าระบบ</h1><p>ปรับแต่งระบบและการเชื่อมต่อ</p></div></div>
+      <div class="stab-wrap">
+        <button class="stab active" onclick="switchStab(0)">🌐 ระบบ</button>
+        <button class="stab" onclick="switchStab(1)">🏢 ฝ่าย/แผนก</button>
+        <button class="stab" onclick="switchStab(2)">🗂️ หมวดหมู่</button>
+        <button class="stab" onclick="switchStab(3)">🏭 ซัพพลายเออร์</button>
+        <button class="stab" onclick="switchStab(4)">📢 LINE</button>
+        <button class="stab" onclick="switchStab(5)">🔧 เครื่องมือ</button>
+      </div>
+
+      <div class="stab-panel card" id="stab-0">
+        <div class="card-hd"><h2 class="card-title">🌐 ข้อมูลระบบ</h2></div>
+        <div class="card-body">
+          <form onsubmit="handleSettings(event)">
+            <div class="frow-2">
+              <div class="fg"><label class="flabel">ชื่อระบบ</label><input type="text" class="fc" id="setName" required></div>
+              <div class="fg"><label class="flabel">โลโก้ (Emoji)</label><input type="text" class="fc" id="setLogo"></div>
+            </div>
+            <div class="frow-2">
+              <div class="fg"><label class="flabel">ชื่อองค์กร</label><input type="text" class="fc" id="setOrg"></div>
+              <div class="fg"><label class="flabel">จำนวนเบิกสูงสุด/ครั้ง</label><input type="number" class="fc" id="setMaxQty" min="1"></div>
+            </div>
+            <div class="fg"><label class="flabel">ต้องอนุมัติการเบิก</label>
+              <select class="fc" id="setReqApv"><option value="true">ใช่</option><option value="false">ไม่ (Auto-approve)</option></select>
+            </div>
+            <button type="submit" class="btn btn-navy">💾 บันทึก</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="stab-panel" id="stab-1" style="display:none">
+        <div class="page-actions mb-3"><button class="btn btn-navy btn-sm" onclick="openDeptModal()">➕ เพิ่มฝ่าย</button></div>
+        <div class="card"><div class="table-wrap">
+          <table class="dt" id="deptTable"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>Code</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+          <tbody id="deptTb"></tbody></table>
+        </div></div>
+      </div>
+
+      <div class="stab-panel" id="stab-2" style="display:none">
+        <div class="page-actions mb-3"><button class="btn btn-teal btn-sm" onclick="openCatModal()">➕ เพิ่มหมวดหมู่</button></div>
+        <div class="card"><div class="table-wrap">
+          <table class="dt" id="catTable"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>คำอธิบาย</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+          <tbody id="catTb"></tbody></table>
+        </div></div>
+      </div>
+
+      <div class="stab-panel" id="stab-3" style="display:none">
+        <div class="page-actions mb-3"><button class="btn btn-navy btn-sm" onclick="openSupModal()">➕ เพิ่มซัพพลายเออร์</button></div>
+        <div class="card"><div class="table-wrap">
+          <table class="dt" id="supTable"><thead><tr><th>รหัส</th><th>ชื่อ</th><th>ผู้ติดต่อ</th><th>โทร</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+          <tbody id="supTb"></tbody></table>
+        </div></div>
+      </div>
+
+      <div class="stab-panel card" id="stab-4" style="display:none">
+        <div class="card-hd"><h2 class="card-title">📢 LINE Notify</h2></div>
+        <div class="card-body">
+          <div style="padding:12px;background:rgba(44,95,232,.05);border:1px solid rgba(44,95,232,.15);border-radius:10px;margin-bottom:16px;font-size:.84rem">
+            <b>วิธีขอ LINE Notify Token:</b><br>
+            1. ไปที่ <a href="https://notify-bot.line.me/th/" target="_blank" style="color:var(--blue)">notify-bot.line.me</a><br>
+            2. Login → "สร้าง Token" → เลือกห้อง LINE<br>
+            3. Copy Token → วางด้านล่าง
+          </div>
+          <div class="fg"><label class="flabel">LINE Notify Token</label>
+            <input type="password" class="fc" id="lineToken" placeholder="วาง Token ที่นี่...">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-navy" onclick="saveLineToken()">💾 บันทึก Token</button>
+            <button class="btn btn-ghost" onclick="testLine()">🔔 ทดสอบส่ง</button>
+          </div>
+          <div id="lineStatus" style="margin-top:10px;font-size:.82rem;color:var(--muted)"></div>
+        </div>
+      </div>
+
+      <div class="stab-panel card" id="stab-5" style="display:none">
+        <div class="card-hd"><h2 class="card-title">🔧 เครื่องมือขั้นสูง</h2></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:480px">
+            <div style="padding:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px">
+              <div style="font-weight:700;margin-bottom:4px">🔄 Rebuild StockBalance</div>
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:10px">คำนวณยอดสต็อกใหม่จาก Lots และ Requests</div>
+              <button class="btn btn-danger btn-sm" onclick="doRebuild()">ดำเนินการ</button>
+            </div>
+            <div style="padding:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px">
+              <div style="font-weight:700;margin-bottom:4px">📊 Export สต็อก CSV</div>
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:10px">ส่งออกข้อมูลทั้งหมด</div>
+              <button class="btn btn-teal btn-sm" onclick="exportCSV()">📥 Download</button>
+            </div>
+            <div style="padding:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px">
+              <div style="font-weight:700;margin-bottom:4px">📂 Import พัสดุจาก CSV</div>
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">คอลัมน์: name*,barcode,category,unit*,price,minStock,initialStock</div>
+              <input type="file" class="fc" id="importFile" accept=".csv" onchange="previewImport(this)">
+              <div id="importPreview" style="display:none;margin-top:10px">
+                <div class="alert-strip" id="importAlertRow"><span>📋</span><span id="importSummaryTxt">0 รายการ</span></div>
+                <button class="btn btn-navy btn-sm mt-2" onclick="doImport()">📂 นำเข้า</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="section" id="section-profile">
+      <div class="page-hd"><div><h1>👤 โปรไฟล์ของฉัน</h1></div></div>
+      <div style="max-width:440px">
+        <div class="card mb-3">
+          <div class="card-body" style="text-align:center;padding:28px">
+            <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-l));display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:var(--ink);margin:0 auto 14px" id="profileAva">-</div>
+            <div style="font-size:1.2rem;font-weight:800" id="profileName">-</div>
+            <div style="font-size:.8rem;color:var(--muted)" id="profileRole">-</div>
+            <div style="font-size:.74rem;color:var(--gold);font-family:'IBM Plex Mono',monospace;margin-top:3px" id="profileDept">-</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h2 class="card-title">🔑 เปลี่ยน PIN</h2></div>
+          <div class="card-body">
+            <form onsubmit="handleChangePin(event)">
+              <div class="fg"><label class="flabel">PIN ปัจจุบัน</label><input type="password" inputmode="numeric" class="fc" id="pinOld" maxlength="6" required></div>
+              <div class="fg"><label class="flabel">PIN ใหม่ (4-6 หลัก)</label><input type="password" inputmode="numeric" class="fc" id="pinNewA" maxlength="6" required minlength="4"></div>
+              <div class="fg"><label class="flabel">ยืนยัน PIN ใหม่</label><input type="password" inputmode="numeric" class="fc" id="pinNewB" maxlength="6" required minlength="4"></div>
+              <button type="submit" class="btn btn-navy">🔒 เปลี่ยน PIN</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- CART FAB -->
+<button class="cart-fab cart-hide" id="cartFab" onclick="openCartModal()">
+  🛒<span class="cart-cnt" id="cartCnt">0</span>
+</button>
+
+<!-- ══ MODALS ═════════════════════════════════════════════ -->
+
+<!-- Camera Scanner Modal -->
+<div class="modal fade" id="scannerModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title" id="scannerTitle">📷 สแกนบาร์โค้ด</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopCamera()"></button>
+    </div>
+    <div class="modal-body" style="padding:14px!important">
+      <div class="scanner-video-wrap">
+        <video id="scannerVideo" autoplay playsinline muted></video>
+        <div class="scan-guide">
+          <div style="position:relative">
+            <div class="scan-box"></div>
+            <div class="scan-corners"></div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+        <div class="scan-result-badge" id="scanBadge">—</div>
+      </div>
+      <div id="scanStatus" style="text-align:center;padding:10px;font-size:.82rem;color:var(--muted)">กำลังเปิดกล้อง...</div>
+      <div style="border-top:1px solid var(--border);margin:10px 0 8px"></div>
+      <div style="font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:6px">⌨️ พิมพ์/สแกนด้วย USB Scanner</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" class="fc" id="manualBarcode" placeholder="พิมพ์บาร์โค้ด แล้วกด Enter" style="flex:1;font-family:'IBM Plex Mono',monospace" onkeydown="if(event.key==='Enter'){event.preventDefault();triggerManual();}">
+        <button class="btn btn-navy btn-sm" onclick="triggerManual()">ค้นหา</button>
+      </div>
+      <div id="camError" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(217,64,64,.07);border:1px solid rgba(217,64,64,.2);border-radius:8px;font-size:.82rem;color:var(--red)"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-bs-dismiss="modal" onclick="stopCamera()">ปิด</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- Product Modal -->
+<div class="modal fade" id="prodModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="prodModalTitle">➕ เพิ่มพัสดุ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <form id="prodForm" onsubmit="handleProd(event)">
+        <input type="hidden" id="pRow">
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">ชื่อพัสดุ *</label><input type="text" class="fc" id="pName" required></div>
+          <div class="fg"><label class="flabel">หมวดหมู่ *</label><select class="fc" id="pCat" required onchange="updateCatName()"><option value="">— เลือก —</option></select><input type="hidden" id="pCatName"></div>
+        </div>
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">บาร์โค้ด</label><input type="text" class="fc" id="pBarcode"></div>
+          <div class="fg"><label class="flabel">หน่วยนับ *</label><input type="text" class="fc" id="pUnit" required placeholder="เช่น ชิ้น, กล่อง"></div>
+        </div>
+        <div class="frow-3">
+          <div class="fg"><label class="flabel">ราคา/หน่วย (฿)</label><input type="number" class="fc" id="pPrice" value="0" min="0" step="0.01"></div>
+          <div class="fg"><label class="flabel">Min Stock</label><input type="number" class="fc" id="pMin" value="5" min="0" required></div>
+          <div class="fg"><label class="flabel">Max Stock</label><input type="number" class="fc" id="pMax" value="0" min="0"></div>
+        </div>
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">ที่เก็บ</label><input type="text" class="fc" id="pLoc" placeholder="เช่น A-01"></div>
+          <div class="fg"><label class="flabel">รูปภาพ (URL)</label><input type="text" class="fc" id="pImg" placeholder="https://..."></div>
+        </div>
+        <div class="fg"><label class="flabel">คำอธิบาย</label><textarea class="fc" id="pDesc" rows="2"></textarea></div>
+        <div class="modal-footer" style="padding:12px 0 0!important;border:none!important">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-gold">💾 บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- Adjust Modal -->
+<div class="modal fade" id="adjModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">⚖️ ปรับยอดสต็อก</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <form id="adjForm" onsubmit="handleAdj(event)">
+        <input type="hidden" id="adjId"><input type="hidden" id="adjName">
+        <div class="fg"><label class="flabel">พัสดุ</label><input type="text" class="fc" id="adjDisp" readonly style="background:var(--surface-2)"></div>
+        <div class="fg"><label class="flabel">จำนวนที่ปรับ (+เพิ่ม / -ลด)</label><input type="number" class="fc" id="adjQty" required><div class="ftext" style="font-size:.7rem;color:var(--muted);margin-top:4px">ค่าบวก = เพิ่ม | ค่าลบ = ลด</div></div>
+        <div class="fg"><label class="flabel">เหตุผล</label><textarea class="fc" id="adjNote" required rows="2"></textarea></div>
+        <div class="modal-footer" style="padding:12px 0 0!important;border:none!important">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-navy">💾 บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- Inbound Modal -->
+<div class="modal fade" id="inboundModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">📥 รับเข้าพัสดุ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <form id="inbForm" onsubmit="handleInbound(event)">
+        <div class="fg"><label class="flabel">พัสดุ *</label>
+          <div style="display:flex;gap:8px">
+            <select class="fc" id="inProd" required style="flex:1"><option value="">— เลือกพัสดุ —</option></select>
+            <button type="button" class="btn btn-navy btn-sm" onclick="openCameraScanner('inbound')">📷</button>
+          </div>
+        </div>
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">วันที่รับ *</label><input type="date" class="fc" id="inDate" required></div>
+          <div class="fg"><label class="flabel">วันหมดอายุ</label><input type="date" class="fc" id="inExp"></div>
+        </div>
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">จำนวน *</label><input type="number" class="fc" id="inQty" min="1" required></div>
+          <div class="fg"><label class="flabel">ราคาต้นทุน/หน่วย</label><input type="number" class="fc" id="inCost" min="0" step="0.01" value="0"></div>
+        </div>
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">ซัพพลายเออร์</label><select class="fc" id="inSup"><option value="">— ไม่ระบุ —</option></select></div>
+          <div class="fg"><label class="flabel">เลขที่ PO</label><input type="text" class="fc" id="inPO" placeholder="PO-2568-001"></div>
+        </div>
+        <div class="modal-footer" style="padding:12px 0 0!important;border:none!important">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-navy">💾 บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- Cart Modal -->
+<div class="modal fade" id="cartModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">🛒 ตะกร้าพัสดุ</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div class="table-wrap mb-3">
+        <table class="dt"><thead><tr><th>รหัส</th><th>ชื่อพัสดุ</th><th>จำนวน</th><th>สต็อก</th><th></th></tr></thead>
+        <tbody id="cartTb"></tbody></table>
+      </div>
+      <div class="fg"><label class="flabel">วัตถุประสงค์</label><input type="text" class="fc" id="cartPurpose" placeholder="ระบุวัตถุประสงค์ (ถ้ามี)"></div>
+      <div class="fg"><label class="flabel">หมายเหตุ</label><textarea class="fc" id="cartNote" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">ปิด</button>
+      <button type="button" class="btn btn-gold" onclick="submitCart()">✅ ยืนยันการเบิก</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">➕ เพิ่มผู้ใช้งาน</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <form id="addUserForm" onsubmit="handleAddUser(event)">
+        <div class="frow-3">
+          <div class="fg"><label class="flabel">คำนำหน้า</label>
+            <select class="fc" id="uPrefix"><option>นาย</option><option>นาง</option><option>น.ส.</option></select>
+          </div>
+          <div class="fg" style="grid-column:span 2"><label class="flabel">ชื่อจริง *</label><input type="text" class="fc" id="uFirst" required></div>
+        </div>
+        <div class="fg"><label class="flabel">นามสกุล *</label><input type="text" class="fc" id="uLast" required></div>
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">ฝ่าย/แผนก</label><select class="fc" id="uDept"><option value="">— เลือก —</option></select></div>
+          <div class="fg"><label class="flabel">สิทธิ์</label><select class="fc" id="uRole"><option value="User">User</option><option value="Admin">Admin</option></select></div>
+        </div>
+        <div class="fg"><label class="flabel">โทรศัพท์</label><input type="text" class="fc" id="uPhone"></div>
+        <div style="padding:10px 14px;background:rgba(31,166,114,.06);border:1px solid rgba(31,166,114,.18);border-radius:8px;font-size:.8rem;color:var(--green);margin-bottom:10px">
+          ℹ️ ผู้ใช้ใหม่จะถูกเพิ่มในระบบโดยไม่มี PIN — จะกำหนด PIN เองในการเข้าใช้ครั้งแรก
+        </div>
+        <div class="modal-footer" style="padding:12px 0 0!important;border:none!important">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-navy">➕ เพิ่มผู้ใช้</button>
+        </div>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- Dept Modal -->
+<div class="modal fade" id="deptModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="deptModalTitle">➕ เพิ่มฝ่าย/แผนก</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <form id="deptForm" onsubmit="handleDept(event)">
+        <input type="hidden" id="dRow">
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">ชื่อฝ่าย *</label><input type="text" class="fc" id="dName" required></div>
+          <div class="fg"><label class="flabel">Code</label><input type="text" class="fc" id="dCode" placeholder="IT, HR..."></div>
+        </div>
+        <div class="modal-footer" style="padding:12px 0 0!important;border:none!important">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-navy">💾 บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- Cat Modal -->
+<div class="modal fade" id="catModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="catModalTitle">➕ เพิ่มหมวดหมู่</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <form id="catForm" onsubmit="handleCat(event)">
+        <input type="hidden" id="cRow">
+        <div class="fg"><label class="flabel">ชื่อหมวดหมู่ *</label><input type="text" class="fc" id="cName" required></div>
+        <div class="fg"><label class="flabel">คำอธิบาย</label><textarea class="fc" id="cDesc" rows="2"></textarea></div>
+        <div class="modal-footer" style="padding:12px 0 0!important;border:none!important">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-teal">💾 บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- Sup Modal -->
+<div class="modal fade" id="supModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="supModalTitle">➕ ซัพพลายเออร์</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <form id="supForm" onsubmit="handleSup(event)">
+        <input type="hidden" id="supRow">
+        <div class="fg"><label class="flabel">ชื่อ *</label><input type="text" class="fc" id="supName" required></div>
+        <div class="frow-2">
+          <div class="fg"><label class="flabel">ผู้ติดต่อ</label><input type="text" class="fc" id="supContact"></div>
+          <div class="fg"><label class="flabel">โทร</label><input type="text" class="fc" id="supPhone"></div>
+        </div>
+        <div class="modal-footer" style="padding:12px 0 0!important;border:none!important">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="submit" class="btn btn-navy">💾 บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div></div>
+</div>
+
+<!-- ═══════════ CONFIG + SCRIPT ═══════════════════════════ -->
+<script src="config.js"></script>
+<script>
+// ── CONFIG (override in config.js) ────────────────────────
+const GAS_URL = window.GAS_URL || 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+
+// ── STATE ──────────────────────────────────────────────────
+let CU = null, CART = [], ALL_PRODS = [], ALL_CATS = [], CHARTS = {};
+let IMPORT_DATA = [];
+let _scannerCtx = 'request', _camStream = null, _zxReader = null, _scanInterval = null;
+let PIN_INPUT = '';
+const PIN_LEN = 6;
+
+// ── THEME ──────────────────────────────────────────────────
+(function(){ try{ if(localStorage.getItem('ims_theme')==='dark') document.body.classList.add('dark'); }catch(e){} })();
+function toggleTheme(){
+  const d=document.body.classList.toggle('dark');
+  localStorage.setItem('ims_theme',d?'dark':'light');
+  document.getElementById('themeBtn').textContent=d?'☀️':'🌙';
+}
+(function(){ const b=document.getElementById('themeBtn'); if(b) b.textContent=localStorage.getItem('ims_theme')==='dark'?'☀️':'🌙'; })();
+
+// ── API CALL (JSONP for cross-origin) ──────────────────────
+function api(action, data) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const params = new URLSearchParams({
+      action,
+      data: encodeURIComponent(JSON.stringify(data || {})),
+      callback: cb
+    });
+    window[cb] = function(res) {
+      delete window[cb];
+      document.head.removeChild(s);
+      resolve(res);
+    };
+    const s = document.createElement('script');
+    s.src = GAS_URL + '?' + params;
+    s.onerror = () => { delete window[cb]; reject(new Error('Network error')); };
+    setTimeout(() => { if(window[cb]){ delete window[cb]; reject(new Error('Timeout')); }}, 30000);
+    document.head.appendChild(s);
+  });
+}
+
+// ── PIN SYSTEM ────────────────────────────────────────────
+async function initPinScreen() {
+  try {
+    const users = await api('getUsers');
+    const sel = document.getElementById('pinUserSel');
+    if (!users || !users.length) {
+      sel.innerHTML = '<option value="">ไม่พบรายชื่อ — ตรวจสอบ config.js</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">— เลือกชื่อของคุณ —</option>' +
+      users.filter(u => u.status !== 'Banned').map(u =>
+        `<option value="${u.id}" data-has-pin="${u.hasPin}" data-name="${esc(u.name)}">${u.name} (${u.department || u.role})</option>`
+      ).join('');
+  } catch(e) {
+    document.getElementById('pinUserSel').innerHTML = '<option>โหลดรายชื่อไม่ได้ — ตรวจสอบ GAS_URL ใน config.js</option>';
+  }
+}
+
+function onUserSelect() {
+  PIN_INPUT = '';
+  updatePinDots();
+  setMsg('');
+  document.getElementById('pinNewForm').style.display = 'none';
+  document.getElementById('pinPad').style.display = '';
+  const sel = document.getElementById('pinUserSel');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  const hasPin = opt.getAttribute('data-has-pin') === 'true';
+  if (!hasPin) {
+    // First time — show set PIN form
+    document.getElementById('pinPad').style.display = 'none';
+    document.getElementById('pinNewForm').style.display = '';
+    setMsg('ยังไม่มี PIN — กรุณากำหนดรหัสใหม่', 'ok');
+  }
+}
+
+function pinPress(n) {
+  if (PIN_INPUT.length >= PIN_LEN) return;
+  PIN_INPUT += String(n);
+  updatePinDots();
+  if (PIN_INPUT.length === PIN_LEN) setTimeout(submitPin, 200);
+}
+
+function pinDel() { PIN_INPUT = PIN_INPUT.slice(0, -1); updatePinDots(); setMsg(''); }
+function pinClear() { PIN_INPUT = ''; updatePinDots(); setMsg(''); }
+
+function updatePinDots() {
+  for (let i = 0; i < 6; i++) {
+    document.getElementById('d'+i).classList.toggle('filled', i < PIN_INPUT.length);
+  }
+}
+
+async function submitPin() {
+  const sel = document.getElementById('pinUserSel');
+  const userId = sel.value;
+  if (!userId || !PIN_INPUT) return;
+  setMsg('กำลังตรวจสอบ...');
+  try {
+    const res = await api('verifyPin', { userId, pin: PIN_INPUT });
+    if (res.success) {
+      document.getElementById('pinOverlay').style.display = 'none';
+      CU = res.user;
+      setupUI();
+      loadSettings();
+      showSection('home');
+    } else {
+      setMsg(res.message || 'PIN ไม่ถูกต้อง', 'err');
+      PIN_INPUT = ''; updatePinDots();
+      // shake animation
+      const dots = document.querySelector('.pin-dots');
+      dots.style.animation = 'none'; dots.offsetHeight;
+      dots.style.animation = 'shake .4s ease';
+    }
+  } catch(e) { setMsg('ข้อผิดพลาด: ' + e.message, 'err'); PIN_INPUT = ''; updatePinDots(); }
+}
+
+async function submitNewPin() {
+  const sel = document.getElementById('pinUserSel');
+  const userId = sel.value;
+  const p1 = document.getElementById('pinNew1').value;
+  const p2 = document.getElementById('pinNew2').value;
+  if (!userId) { setMsg('กรุณาเลือกชื่อก่อน', 'err'); return; }
+  if (!p1 || p1.length < 4) { setMsg('PIN ต้องมีอย่างน้อย 4 หลัก', 'err'); return; }
+  if (p1 !== p2) { setMsg('PIN ไม่ตรงกัน', 'err'); return; }
+  setMsg('กำลังบันทึก...');
+  try {
+    const res = await api('setPin', { userId, pin: p1 });
+    if (res.success) {
+      setMsg('กำหนด PIN สำเร็จ! กำลังเข้าสู่ระบบ...', 'ok');
+      // Auto login
+      const res2 = await api('verifyPin', { userId, pin: p1 });
+      if (res2.success) {
+        document.getElementById('pinOverlay').style.display = 'none';
+        CU = res2.user; setupUI(); loadSettings(); showSection('home');
+      }
+    } else { setMsg(res.message, 'err'); }
+  } catch(e) { setMsg('ข้อผิดพลาด', 'err'); }
+}
+
+function setMsg(txt, type) {
+  const el = document.getElementById('pinMsg');
+  el.textContent = txt;
+  el.className = 'pin-msg' + (type ? ' '+type : '');
+}
+
+// ── INIT ──────────────────────────────────────────────────
+initPinScreen();
+startClock();
+
+// ── UI SETUP ──────────────────────────────────────────────
+function setupUI() {
+  const u = CU;
+  document.getElementById('sidebarName').textContent = u.name;
+  document.getElementById('sidebarDept').textContent = u.department || u.role;
+  document.getElementById('sidebarAva').textContent  = (u.name||'?')[0];
+  document.getElementById('topAva').textContent       = (u.name||'?')[0];
+  document.getElementById('welcomeTxt').textContent  = `ยินดีต้อนรับ, ${u.name}`;
+  document.getElementById('profileName').textContent = u.name;
+  document.getElementById('profileAva').textContent  = (u.name||'?')[0];
+  document.getElementById('profileRole').textContent = u.role === 'Admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้งาน';
+  document.getElementById('profileDept').textContent = u.department || '—';
+
+  if (u.role === 'Admin') document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = `
+    <div class="nav-sec">เมนูหลัก</div>
+    <button class="nav-btn active" data-s="home" onclick="showSection('home')"><span class="nav-icon">🏠</span>หน้าหลัก</button>
+    <button class="nav-btn" data-s="request" onclick="showSection('request')"><span class="nav-icon">🛒</span>เบิกพัสดุ</button>
+    <button class="nav-btn" data-s="history" onclick="showSection('history')"><span class="nav-icon">📜</span>ประวัติการเบิก</button>
+    <button class="nav-btn" data-s="profile" onclick="showSection('profile')"><span class="nav-icon">👤</span>โปรไฟล์</button>
+    ${u.role==='Admin'?`
+    <div class="nav-sec">จัดการระบบ</div>
+    <button class="nav-btn" data-s="products" onclick="showSection('products')"><span class="nav-icon">📦</span>จัดการพัสดุ</button>
+    <button class="nav-btn" data-s="inbound" onclick="showSection('inbound')"><span class="nav-icon">📥</span>รับเข้าพัสดุ</button>
+    <button class="nav-btn" data-s="approvals" onclick="showSection('approvals')"><span class="nav-icon">✅</span>อนุมัติการเบิก<span class="nav-badge" id="pendBadge" style="display:none">0</span></button>
+    <button class="nav-btn" data-s="users" onclick="showSection('users')"><span class="nav-icon">👥</span>จัดการผู้ใช้งาน</button>
+    <button class="nav-btn" data-s="settings" onclick="showSection('settings')"><span class="nav-icon">⚙️</span>ตั้งค่าระบบ</button>`:''}`;
+}
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  const sec = document.getElementById('section-'+id);
+  if (sec) sec.classList.add('active');
+  const nb = document.querySelector(`[data-s="${id}"]`);
+  if (nb) nb.classList.add('active');
+  const labels = {home:'หน้าหลัก',request:'เบิกพัสดุ',history:'ประวัติการเบิก',products:'จัดการพัสดุ',inbound:'รับเข้าพัสดุ',approvals:'อนุมัติการเบิก',users:'จัดการผู้ใช้งาน',settings:'ตั้งค่าระบบ',profile:'โปรไฟล์'};
+  document.getElementById('topbarTitle').textContent = labels[id] || '';
+  document.getElementById('cartFab').classList.toggle('cart-hide', id !== 'request');
+  const loaders = {home:loadDashboard,request:loadProdForReq,history:loadHistory,products:loadProducts,inbound:loadLots,approvals:loadRequests,users:loadUsers,settings:()=>{loadSettings();loadDepts();loadCats();loadSups();}};
+  if (loaders[id]) loaders[id]();
+  closeSidebar();
+}
+
+// ── CLOCK ─────────────────────────────────────────────────
+function startClock() {
+  const tick = () => { document.getElementById('clock').textContent = new Date().toLocaleString('th-TH',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}); };
+  tick(); setInterval(tick, 1000);
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
+function closeSidebar()   { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+function logout() {
+  Swal.fire({title:'ออกจากระบบ?',icon:'question',showCancelButton:true,confirmButtonText:'ออก',cancelButtonText:'ยกเลิก',confirmButtonColor:'#d94040'})
+    .then(r => { if(r.isConfirmed) { CU=null; CART=[]; document.getElementById('pinOverlay').style.display='flex'; PIN_INPUT=''; updatePinDots(); setMsg(''); document.getElementById('pinUserSel').value=''; document.getElementById('pinNewForm').style.display='none'; document.getElementById('pinPad').style.display=''; initPinScreen(); } });
+}
+
+// ── 📷 REAL-TIME CAMERA SCANNER ───────────────────────────
+async function openCameraScanner(ctx) {
+  _scannerCtx = ctx || 'request';
+  const titles = {request:'📷 สแกน — เบิกพัสดุ',products:'📷 สแกน — ค้นหาพัสดุ',history:'📷 สแกน — ค้นหา',inbound:'📷 สแกน — เลือกพัสดุ'};
+  document.getElementById('scannerTitle').textContent = titles[_scannerCtx] || '📷 สแกนบาร์โค้ด';
+  document.getElementById('scanStatus').textContent   = 'กำลังเปิดกล้อง...';
+  document.getElementById('scanBadge').style.display  = 'none';
+  document.getElementById('camError').style.display   = 'none';
+  document.getElementById('manualBarcode').value      = '';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('scannerModal')).show();
+  await startCamera();
+}
+
+async function startCamera() {
+  try {
+    // หยุด stream เดิมก่อน
+    stopCamera(false);
+
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 }, height: { ideal: 720 }
+      }
+    };
+    _camStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = document.getElementById('scannerVideo');
+    video.srcObject = _camStream;
+    await video.play();
+
+    // Init ZXing reader
+    if (!_zxReader) {
+      const hints = new Map();
+      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+        ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.CODE_39,
+        ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E,
+        ZXing.BarcodeFormat.QR_CODE, ZXing.BarcodeFormat.DATA_MATRIX,
+        ZXing.BarcodeFormat.PDF_417, ZXing.BarcodeFormat.AZTEC,
+      ]);
+      _zxReader = new ZXing.MultiFormatReader();
+      _zxReader.setHints(hints);
+    }
+
+    document.getElementById('scanStatus').textContent = '🎯 ส่องบาร์โค้ดที่กล้อง';
+
+    // Canvas สำหรับ decode frame
+    const canvas  = document.createElement('canvas');
+    const ctx2d   = canvas.getContext('2d');
+    let lastCode  = null;
+    let lastTime  = 0;
+    let debounce  = 1500; // ms ระหว่างการ detect ซ้ำ
+
+    _scanInterval = setInterval(async () => {
+      if (!video.videoWidth || video.paused || video.ended) return;
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
+      try {
+        const w   = canvas.width;
+        const h   = canvas.height;
+        const px  = ctx2d.getImageData(0, 0, w, h);
+        const src = new ZXing.RGBLuminanceSource(px.data, w, h);
+        const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(src));
+        const res = _zxReader.decode(bmp);
+        if (res && res.getText()) {
+          const code = res.getText().trim();
+          const now  = Date.now();
+          if (code === lastCode && now - lastTime < debounce) return;
+          lastCode = code;
+          lastTime = now;
+
+          const badge = document.getElementById('scanBadge');
+          badge.textContent = code;
+          badge.style.display = 'block';
+          setTimeout(() => badge.style.display = 'none', 2000);
+
+          handleScanResult(code);
+        }
+      } catch(e) { /* NotFoundException — ปกติ */ }
+    }, 120); // ~8fps decode
+
+  } catch(err) {
+    document.getElementById('scanStatus').textContent = '';
+    const ce = document.getElementById('camError');
+    ce.style.display = '';
+    if (err.name === 'NotAllowedError')
+      ce.textContent = '❌ ไม่ได้รับสิทธิ์ใช้กล้อง — กรุณาอนุญาตในเบราว์เซอร์';
+    else if (err.name === 'NotFoundError')
+      ce.textContent = '❌ ไม่พบกล้อง — ใช้การพิมพ์แทนได้';
+    else
+      ce.textContent = '❌ ' + err.message;
+  }
+}
+
+function stopCamera(resetState) {
+  if (_scanInterval) { clearInterval(_scanInterval); _scanInterval = null; }
+  if (_camStream) {
+    _camStream.getTracks().forEach(t => t.stop());
+    _camStream = null;
+  }
+  const v = document.getElementById('scannerVideo');
+  if (v) v.srcObject = null;
+}
+
+// ── Scan result routing ────────────────────────────────────
+function handleScanResult(code) {
+  if (!code) return;
+  if (_scannerCtx === 'request') {
+    const p = _findProd(code);
+    if (p && Number(p.stock) > 0) {
+      document.getElementById('scanStatus').textContent = `✅ พบ: ${p.name} (${p.stock} ${p.unit})`;
+      setTimeout(() => {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('scannerModal')).hide();
+        stopCamera();
+        addToCart(p.id, p.name, Number(p.stock), p.unit);
+      }, 800);
+    } else if (p) {
+      document.getElementById('scanStatus').textContent = `⚠️ "${p.name}" สต็อกหมด`;
+    } else {
+      document.getElementById('scanStatus').textContent = `ไม่พบ "${code}" — ค้นหาในรายการ`;
+      document.getElementById('reqSearch').value = code;
+      filterProdGrid();
+      setTimeout(() => { bootstrap.Modal.getOrCreateInstance(document.getElementById('scannerModal')).hide(); stopCamera(); }, 1000);
+    }
+  } else if (_scannerCtx === 'products') {
+    document.getElementById('scanStatus').textContent = `🔍 ค้นหา: ${code}`;
+    setTimeout(() => {
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('scannerModal')).hide();
+      stopCamera();
+    }, 700);
+  } else if (_scannerCtx === 'history') {
+    document.getElementById('hProd').value = code;
+    loadHistory();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('scannerModal')).hide();
+    stopCamera();
+  } else if (_scannerCtx === 'inbound') {
+    const p = _findProd(code, true);
+    if (p) {
+      const sel = document.getElementById('inProd');
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === p.id) { sel.selectedIndex = i; break; }
+      }
+      document.getElementById('scanStatus').textContent = `✅ ${p.name}`;
+      setTimeout(() => { bootstrap.Modal.getOrCreateInstance(document.getElementById('scannerModal')).hide(); stopCamera(); }, 700);
+    } else {
+      document.getElementById('scanStatus').textContent = `ไม่พบบาร์โค้ด ${code}`;
+    }
+  }
+}
+
+function triggerManual() {
+  const code = document.getElementById('manualBarcode').value.trim();
+  if (code) handleScanResult(code);
+}
+
+// Close camera when modal closes
+document.getElementById('scannerModal').addEventListener('hidden.bs.modal', () => stopCamera());
+
+function _findProd(code, allStatus) {
+  const c = String(code).trim();
+  const ok = p => allStatus || p.status === 'Active';
+  return ALL_PRODS.find(p => p.barcode === c && ok(p))
+      || ALL_PRODS.find(p => p.id === c && ok(p))
+      || null;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await api('getDashboardStats');
+    if (!d) return;
+    document.getElementById('s1').textContent = d.totalProducts || 0;
+    document.getElementById('s2').textContent = d.lowStockCount || 0;
+    document.getElementById('s3').textContent = d.pendingCount  || 0;
+    document.getElementById('s4').textContent = d.todayCount    || 0;
+    document.getElementById('s5').textContent = Number(d.totalValue||0).toLocaleString();
+    const pb = document.getElementById('pendBadge');
+    if (pb) { pb.textContent = d.pendingCount||0; pb.style.display = d.pendingCount > 0 ? '' : 'none'; }
+    const ltb = document.getElementById('lowStockTb');
+    if (ltb) {
+      if (!d.lowStockItems || !d.lowStockItems.length) ltb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--green);padding:24px">✅ สต็อกอยู่ในเกณฑ์ดี</td></tr>';
+      else ltb.innerHTML = d.lowStockItems.map(p => `<tr><td class="mono txt-s">${p.id}</td><td>${p.name}</td><td style="color:var(--red);font-weight:700">${p.stock}</td><td class="txt-m">${p.minStock}</td></tr>`).join('');
+    }
+    if (CU && CU.role === 'Admin') renderTrendChart(d.monthlyTrend || []);
+  } catch(e) { console.warn('Dashboard:', e.message); }
+}
+
+function renderTrendChart(data) {
+  const ctx = document.getElementById('trendChart'); if (!ctx) return;
+  if (CHARTS.trend) CHARTS.trend.destroy();
+  CHARTS.trend = new Chart(ctx, {
+    type:'line',
+    data:{labels:data.map(d=>d.label),datasets:[{label:'รายการเบิก',data:data.map(d=>d.count),borderColor:'#2c5fe8',backgroundColor:'rgba(44,95,232,.08)',tension:.4,fill:true,pointBackgroundColor:'#2c5fe8',pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{}}}
+  });
+}
+
+// ── PRODUCTS ──────────────────────────────────────────────
+async function loadProducts() {
+  const tb = document.getElementById('prodTb'); if (!tb) return;
+  tb.innerHTML = loadR(8);
+  try {
+    ALL_PRODS = await api('getProducts') || [];
+    if (!ALL_PRODS.length) { tb.innerHTML = emptyR(8, 'ไม่มีข้อมูลพัสดุ'); return; }
+    tb.innerHTML = ALL_PRODS.map(p => {
+      const sc = Number(p.stock) <= Number(p.minStock) ? 'color:var(--red);font-weight:700' : 'color:var(--green);font-weight:700';
+      const img = p.image ? `<img src="${p.image}" class="img-th" onerror="this.style.display='none'">` : '<span style="font-size:1.3rem">📦</span>';
+      const pe  = encodeURIComponent(JSON.stringify(p));
+      return `<tr>
+        <td>${img}</td>
+        <td class="mono txt-s"><b>${p.id}</b><br>${p.barcode||'-'}</td>
+        <td><b>${p.name}</b>${p.description?`<br><small class="txt-m">${p.description.slice(0,35)}</small>`:''}</td>
+        <td><span class="badge bb">${p.category}</span></td>
+        <td><span style="${sc}">${p.stock}</span> <span class="txt-s txt-m">${p.unit}</span></td>
+        <td class="mono txt-s">${Number(p.price).toLocaleString()} ฿</td>
+        <td>${p.status==='Active'?'<span class="badge bs">ใช้งาน</span>':'<span class="badge bd">ยกเลิก</span>'}</td>
+        <td><div class="act-btns">
+          <button class="btn btn-ghost btn-icon btn-sm" title="ปรับยอด" onclick="openAdj('${p.id}','${esc(p.name)}',${p.stock},'${p.unit}')">⚖️</button>
+          <button class="btn btn-ghost btn-icon btn-sm" title="แก้ไข" onclick="openProdModal('${pe}')">✏️</button>
+          <button class="btn btn-ghost btn-icon btn-sm" title="ลบ" onclick="delProd(${p.row},'${esc(p.name)}')">🗑️</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  } catch(e) { tb.innerHTML = emptyR(8, 'โหลดล้มเหลว: ' + e.message); }
+}
+
+async function openProdModal(enc) {
+  document.getElementById('prodForm').reset(); document.getElementById('pRow').value = '';
+  document.getElementById('prodModalTitle').textContent = '➕ เพิ่มพัสดุใหม่';
+  try {
+    const cats = await api('getCategories');
+    ALL_CATS = cats || [];
+    document.getElementById('pCat').innerHTML = '<option value="">— เลือก —</option>' +
+      cats.filter(c=>c.status==='Active').map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    if (enc) {
+      const p = JSON.parse(decodeURIComponent(enc));
+      document.getElementById('prodModalTitle').textContent = `✏️ แก้ไข: ${p.name}`;
+      document.getElementById('pRow').value=p.row; document.getElementById('pName').value=p.name;
+      document.getElementById('pBarcode').value=p.barcode||''; document.getElementById('pCat').value=p.categoryId;
+      document.getElementById('pCatName').value=p.category; document.getElementById('pUnit').value=p.unit;
+      document.getElementById('pPrice').value=p.price; document.getElementById('pMin').value=p.minStock;
+      document.getElementById('pMax').value=p.maxStock||0; document.getElementById('pLoc').value=p.location||'';
+      document.getElementById('pImg').value=p.image||''; document.getElementById('pDesc').value=p.description||'';
+    }
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('prodModal')).show();
+  } catch(e) { showErr('โหลดหมวดหมู่ล้มเหลว'); }
+}
+
+function updateCatName() {
+  const sel = document.getElementById('pCat');
+  const cat = ALL_CATS.find(c => c.id === sel.value);
+  document.getElementById('pCatName').value = cat ? cat.name : sel.options[sel.selectedIndex]?.text || '';
+}
+
+async function handleProd(e) {
+  e.preventDefault(); showLoading('กำลังบันทึก...');
+  try {
+    const res = await api('saveProduct', {
+      row: document.getElementById('pRow').value,
+      name: document.getElementById('pName').value, barcode: document.getElementById('pBarcode').value,
+      categoryId: document.getElementById('pCat').value,
+      category: document.getElementById('pCatName').value || document.getElementById('pCat').options[document.getElementById('pCat').selectedIndex]?.text || '',
+      unit: document.getElementById('pUnit').value, price: document.getElementById('pPrice').value,
+      minStock: document.getElementById('pMin').value, maxStock: document.getElementById('pMax').value,
+      location: document.getElementById('pLoc').value, image: document.getElementById('pImg').value,
+      description: document.getElementById('pDesc').value, status: 'Active', createdBy: CU.name
+    });
+    if (res.success) { showOk(res.message); bootstrap.Modal.getOrCreateInstance(document.getElementById('prodModal')).hide(); loadProducts(); }
+    else showErr(res.message);
+  } catch(e) { Swal.close(); showErr(e.message); }
+}
+
+async function delProd(row, name) {
+  const r = await Swal.fire({title:'ยืนยันการลบ?',text:`ลบ "${name}"`,icon:'warning',showCancelButton:true,confirmButtonText:'ลบ',cancelButtonText:'ยกเลิก',confirmButtonColor:'#d94040'});
+  if (r.isConfirmed) { showLoading(); const res = await api('deleteProduct', {row}); if(res.success){showOk(res.message);loadProducts();}else showErr(res.message); }
+}
+
+function openAdj(id, name, stock, unit) {
+  document.getElementById('adjId').value=id; document.getElementById('adjName').value=name;
+  document.getElementById('adjDisp').value=`${name} (คงเหลือ ${stock} ${unit})`;
+  document.getElementById('adjQty').value=''; document.getElementById('adjNote').value='';
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('adjModal')).show();
+}
+
+async function handleAdj(e) {
+  e.preventDefault(); showLoading('กำลังปรับยอด...');
+  try {
+    const res = await api('adjustStock', {
+      productId: document.getElementById('adjId').value, productName: document.getElementById('adjName').value,
+      qty: Number(document.getElementById('adjQty').value), note: document.getElementById('adjNote').value, adjustedBy: CU.name
+    });
+    if (res.success) { showOk(res.message); bootstrap.Modal.getOrCreateInstance(document.getElementById('adjModal')).hide(); loadProducts(); loadDashboard(); }
+    else showErr(res.message);
+  } catch(e) { Swal.close(); showErr(e.message); }
+}
+
+// ── INBOUND ───────────────────────────────────────────────
+async function loadLots() {
+  const tb = document.getElementById('lotsTb'); if (!tb) return;
+  tb.innerHTML = loadR(6);
+  try {
+    const lots = await api('getLots', {});
+    if (!lots || !lots.length) { tb.innerHTML = emptyR(6, 'ยังไม่มีข้อมูล'); return; }
+    tb.innerHTML = lots.map(l => `<tr>
+      <td class="mono txt-s"><span class="badge bn">${l.lotId}</span></td>
+      <td><b>${l.productName}</b></td><td>${l.supplier||'-'}</td>
+      <td class="mono txt-s">${l.receiveDate}</td>
+      <td class="fw7 mono" style="color:var(--green)">+${l.qty}</td>
+      <td class="mono txt-s">${Number(l.totalCost||0).toLocaleString()} ฿</td>
+    </tr>`).join('');
+  } catch(e) { tb.innerHTML = emptyR(6, 'โหลดล้มเหลว'); }
+}
+
+async function openInboundModal() {
+  document.getElementById('inbForm').reset();
+  document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
+  const prods = ALL_PRODS.length ? ALL_PRODS : (await api('getProducts') || []);
+  document.getElementById('inProd').innerHTML = '<option value="">— เลือกพัสดุ —</option>' +
+    prods.filter(p=>p.status==='Active').map(p=>`<option value="${p.id}" data-name="${esc(p.name)}" data-unit="${p.unit||''}">${p.id}: ${p.name}</option>`).join('');
+  const sups = await api('getSuppliers');
+  document.getElementById('inSup').innerHTML = '<option value="">— ไม่ระบุ —</option>' +
+    (sups||[]).filter(s=>s.status==='Active').map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('inboundModal')).show();
+}
+
+async function handleInbound(e) {
+  e.preventDefault(); showLoading('กำลังบันทึก...');
+  const sel = document.getElementById('inProd');
+  try {
+    const res = await api('saveInbound', {
+      productId: sel.value, productName: sel.options[sel.selectedIndex].getAttribute('data-name'),
+      unit: sel.options[sel.selectedIndex].getAttribute('data-unit'),
+      receiveDate: document.getElementById('inDate').value, expiryDate: document.getElementById('inExp').value,
+      qty: document.getElementById('inQty').value, unitCost: document.getElementById('inCost').value,
+      supplier: document.getElementById('inSup').value, poNumber: document.getElementById('inPO').value, receivedBy: CU.name
+    });
+    if (res.success) { showOk(res.message); bootstrap.Modal.getOrCreateInstance(document.getElementById('inboundModal')).hide(); loadLots(); loadDashboard(); }
+    else showErr(res.message);
+  } catch(e) { Swal.close(); showErr(e.message); }
+}
+
+// ── APPROVALS ─────────────────────────────────────────────
+async function loadRequests() {
+  const tb = document.getElementById('apvTb'); if (!tb) return;
+  tb.innerHTML = loadR(9);
+  try {
+    const reqs = await api('getRequests', {statusFilter:'Pending'});
+    if (!reqs || !reqs.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--green)">✅ ไม่มีรายการรออนุมัติ</td></tr>'; return; }
+    tb.innerHTML = reqs.map(r => `<tr>
+      <td><input type="checkbox" class="bcb" value="${r.row}" onchange="updateBulkBar()"></td>
+      <td class="mono txt-s">${r.reqId}</td><td><b>${r.userName}</b></td>
+      <td><span class="badge bt">${r.department||'-'}</span></td>
+      <td><b>${r.productName}</b></td>
+      <td class="fw7 mono">${r.qty} ${r.unit||''}</td>
+      <td class="txt-s">${r.purpose||'-'}</td>
+      <td class="txt-s mono">${r.date}</td>
+      <td><div class="act-btns">
+        <button class="btn btn-success btn-sm" onclick="quickApv(${r.row},'Approved')">✅</button>
+        <button class="btn btn-danger btn-sm" onclick="quickApv(${r.row},'Rejected')">❌</button>
+      </div></td>
+    </tr>`).join('');
+  } catch(e) { tb.innerHTML = emptyR(9, 'โหลดล้มเหลว'); }
+}
+
+async function quickApv(row, status) {
+  showLoading();
+  const res = await api('updateRequestStatus', {row, newStatus: status, adminNote:'', adminName: CU.name});
+  if (res.success) { showOk(res.message); loadRequests(); loadDashboard(); } else showErr(res.message);
+}
+
+function toggleAll(cb) { document.querySelectorAll('.bcb').forEach(c => c.checked = cb.checked); updateBulkBar(); }
+function updateBulkBar() {
+  const cnt = document.querySelectorAll('.bcb:checked').length;
+  document.getElementById('bulkBar').style.display = cnt > 0 ? '' : 'none';
+  document.getElementById('bulkCnt').textContent = `${cnt} รายการ`;
+  if (!cnt) document.getElementById('selAll').checked = false;
+}
+async function doBulk(status) {
+  const rows = Array.from(document.querySelectorAll('.bcb:checked')).map(c => parseInt(c.value));
+  if (!rows.length) return;
+  const r = await Swal.fire({title:`${status==='Approved'?'อนุมัติ':'ปฏิเสธ'} ${rows.length} รายการ?`,icon:'question',showCancelButton:true,confirmButtonText:'ยืนยัน',cancelButtonText:'ยกเลิก'});
+  if (r.isConfirmed) {
+    showLoading();
+    const res = await api('processBulkApprovals', {rows, newStatus: status, adminName: CU.name});
+    if (res.success) { showOk(res.message); loadRequests(); loadDashboard(); } else showErr(res.message);
+  }
+}
+async function saveAutoApprove() {
+  const v = document.getElementById('autoToggle').checked;
+  await api('saveSettings', {requireApproval: v ? 'false' : 'true'});
+  Swal.fire({toast:true,position:'top-end',icon:'info',title:v?'⚡ Auto-approve เปิด':'⏸ ต้องอนุมัติ',timer:2000,showConfirmButton:false});
+}
+
+// ── CART ──────────────────────────────────────────────────
+async function loadProdForReq() {
+  const grid = document.getElementById('prodGrid'); if (!grid) return;
+  grid.innerHTML = '<div class="empty"><div class="spin-sm"></div> กำลังโหลด...</div>';
+  try {
+    ALL_PRODS = await api('getProducts') || [];
+    const cats = [...new Set(ALL_PRODS.filter(p=>p.status==='Active').map(p=>p.category))].sort();
+    const cf = document.getElementById('reqCatFilter');
+    const cur = cf.value;
+    cf.innerHTML = '<option value="">ทุกหมวดหมู่</option>' + cats.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+    renderProdGrid(ALL_PRODS);
+  } catch(e) { grid.innerHTML = '<div class="empty">โหลดล้มเหลว กรุณารีเฟรช</div>'; }
+}
+
+function renderProdGrid(prods) {
+  const grid = document.getElementById('prodGrid'); if (!grid) return;
+  const s   = (document.getElementById('reqSearch')?.value || '').toLowerCase();
+  const cat = document.getElementById('reqCatFilter')?.value || '';
+  const vis = prods.filter(p => p.status==='Active' && Number(p.stock)>0 &&
+    (!s || p.name.toLowerCase().includes(s) || p.id.toLowerCase().includes(s) || (p.barcode&&p.barcode.toLowerCase().includes(s))) &&
+    (!cat || p.category === cat));
+  if (!vis.length) { grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>ไม่พบพัสดุ</div>'; return; }
+  grid.innerHTML = vis.map(p => {
+    const stock = Number(p.stock);
+    const img   = p.image ? `<img src="${p.image}" style="width:100%;height:100%;object-fit:cover">` : '📦';
+    return `<div class="prod-card">
+      <div class="prod-img">${img}</div>
+      <div class="prod-body">
+        <div class="prod-name" title="${p.name}">${p.name}</div>
+        <div class="prod-meta">${p.category} · ${p.unit}</div>
+        <div class="prod-meta mono txt-s">${p.location?`📍${p.location}`:''} ${p.barcode?`<span style="color:var(--light)">| ${p.barcode}</span>`:''}</div>
+        <div class="prod-stock ${stock<=Number(p.minStock)?'s-low':'s-ok'}">คงเหลือ ${stock} ${p.unit}</div>
+        <button class="btn btn-gold btn-sm" style="width:100%;margin-top:8px;justify-content:center" onclick="addToCart('${p.id}','${esc(p.name)}',${stock},'${p.unit}')">+ ใส่ตะกร้า</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterProdGrid() { renderProdGrid(ALL_PRODS); }
+
+async function addToCart(id, name, maxStock, unit) {
+  const { value: qty, isConfirmed } = await Swal.fire({
+    title:'ใส่ตะกร้า', html:`<b>${name}</b><br><small class="txt-m">คงเหลือ ${maxStock} ${unit}</small>`,
+    input:'number',inputPlaceholder:`จำนวน (สูงสุด ${maxStock})`,
+    inputAttributes:{min:1,max:maxStock,step:1},showCancelButton:true,
+    confirmButtonText:'ใส่ตะกร้า',cancelButtonText:'ยกเลิก',
+    inputValidator:v=>{if(!v||v<1)return'ระบุอย่างน้อย 1';if(v>maxStock)return`สูงสุด ${maxStock}`;}
+  });
+  if (!isConfirmed) return;
+  const q = parseInt(qty);
+  const ex = CART.find(c=>c.productId===id);
+  if (ex) { if(ex.qty+q>maxStock){showErr(`รวมเกิน ${maxStock}`);return;} ex.qty+=q; }
+  else CART.push({productId:id,productName:name,qty:q,maxStock,unit});
+  document.getElementById('cartCnt').textContent = CART.length;
+  Swal.fire({icon:'success',title:'ใส่ตะกร้าแล้ว!',timer:700,showConfirmButton:false});
+}
+
+function openCartModal() {
+  renderCartTb();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('cartModal')).show();
+}
+function renderCartTb() {
+  const tb = document.getElementById('cartTb');
+  if (!CART.length) { tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted)">ตะกร้าว่าง</td></tr>'; return; }
+  tb.innerHTML = CART.map((it,i)=>`<tr>
+    <td class="mono txt-s">${it.productId}</td><td>${it.productName}</td>
+    <td class="fw7 mono">${it.qty}</td><td class="txt-m mono">${it.maxStock}</td>
+    <td><button class="btn btn-danger btn-icon btn-sm" onclick="removeCart(${i})">✕</button></td>
+  </tr>`).join('');
+}
+function removeCart(i) { CART.splice(i,1); document.getElementById('cartCnt').textContent=CART.length; renderCartTb(); }
+
+async function submitCart() {
+  if (!CART.length) { showErr('ตะกร้าว่าง'); return; }
+  showLoading('กำลังบันทึก...');
+  try {
+    const res = await api('saveBulkRequest', {
+      cart: CART, note: document.getElementById('cartNote').value,
+      purpose: document.getElementById('cartPurpose').value,
+      userId: CU.id, userName: CU.name, department: CU.department || ''
+    });
+    if (res.success) {
+      showOk(res.message); CART = [];
+      document.getElementById('cartCnt').textContent = 0;
+      document.getElementById('cartNote').value = '';
+      document.getElementById('cartPurpose').value = '';
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('cartModal')).hide();
+      loadProdForReq(); loadHistory(); loadDashboard();
+    } else showErr(res.message);
+  } catch(e) { Swal.close(); showErr(e.message); }
+}
+
+// ── HISTORY ───────────────────────────────────────────────
+function resetHistFilter() {
+  ['hUser','hProd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('hPeriod').value=''; document.getElementById('hStatus').value='all';
+  loadHistory();
+}
+async function loadHistory() {
+  const tb = document.getElementById('histTb'); if (!tb) return;
+  tb.innerHTML = loadR(8);
+  try {
+    const rows = await api('getUserHistory', {
+      userId: CU.id, role: CU.role,
+      filters: {
+        userName:    document.getElementById('hUser')?.value||'',
+        productName: document.getElementById('hProd')?.value||'',
+        period:      document.getElementById('hPeriod')?.value||'',
+        status:      document.getElementById('hStatus')?.value||'all'
+      }
+    });
+    if (!rows || !rows.length) { tb.innerHTML = emptyR(8, 'ไม่พบข้อมูล'); return; }
+    const bm={Approved:'bs',Pending:'bw',Rejected:'bd'};
+    const tm={Approved:'อนุมัติ',Pending:'รออนุมัติ',Rejected:'ไม่อนุมัติ'};
+    tb.innerHTML = rows.map(r=>`<tr>
+      <td class="mono txt-s">${r.reqId}</td><td class="txt-s">${r.date}</td>
+      <td>${r.userName}</td><td><span class="badge bt">${r.department||'-'}</span></td>
+      <td><b>${r.productName}</b></td>
+      <td class="fw7 mono">${r.qty} ${r.unit||''}</td>
+      <td class="txt-s">${r.purpose||'-'}</td>
+      <td><span class="badge ${bm[r.status]||'bn'}">${tm[r.status]||r.status}</span></td>
+    </tr>`).join('');
+  } catch(e) { tb.innerHTML = emptyR(8, 'โหลดล้มเหลว'); }
+}
+
+// ── USERS ─────────────────────────────────────────────────
+async function loadUsers() {
+  const tb = document.getElementById('usersTb'); if (!tb) return;
+  tb.innerHTML = loadR(8);
+  try {
+    const users = await api('getAllUsers');
+    if (!users || !users.length) { tb.innerHTML = emptyR(8, 'ไม่พบข้อมูล'); return; }
+    tb.innerHTML = users.map(u=>`<tr>
+      <td class="mono txt-s">${u.id}</td><td><b>${u.name}</b></td>
+      <td>${u.department||'-'}</td>
+      <td><select class="inline-sel" id="role_${u.row}">
+        <option value="User" ${u.role==='User'?'selected':''}>User</option>
+        <option value="Admin" ${u.role==='Admin'?'selected':''}>Admin</option>
+      </select></td>
+      <td><select class="inline-sel" id="st_${u.row}">
+        <option value="Approved" ${u.status==='Approved'?'selected':''}>Approved</option>
+        <option value="Banned" ${u.status==='Banned'?'selected':''}>Banned</option>
+      </select></td>
+      <td>${u.hasPin?'<span class="badge bs">มี PIN</span>':'<span class="badge bw">ยังไม่มี</span>'}</td>
+      <td class="txt-s txt-m">${u.lastLogin||'-'}</td>
+      <td><div class="act-btns">
+        <button class="btn btn-primary btn-sm" onclick="saveUser(${u.row})">💾</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetPin('${u.id}','${esc(u.name)}')">🔑 รีเซ็ต PIN</button>
+        <button class="btn btn-danger btn-sm" onclick="delUser(${u.row},'${esc(u.name)}')">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+  } catch(e) { tb.innerHTML = emptyR(8, 'โหลดล้มเหลว'); }
+}
+
+async function saveUser(row) {
+  showLoading();
+  const res = await api('updateUser', {row, newStatus: document.getElementById('st_'+row).value, newRole: document.getElementById('role_'+row).value, note:''});
+  if (res.success) showOk(res.message); else showErr(res.message);
+}
+
+async function resetPin(userId, name) {
+  const r = await Swal.fire({title:`รีเซ็ต PIN ของ "${name}"?`,text:'ผู้ใช้จะต้องกำหนด PIN ใหม่ในครั้งถัดไป',icon:'warning',showCancelButton:true,confirmButtonText:'รีเซ็ต',cancelButtonText:'ยกเลิก',confirmButtonColor:'#d94040'});
+  if (r.isConfirmed) {
+    showLoading();
+    const res = await api('setPin', {userId, pin: ''}).catch(() => null);
+    // Use internal reset endpoint
+    const res2 = await api('resetUserPin', {userId});
+    showOk(res2?.message || 'รีเซ็ต PIN สำเร็จ');
+    loadUsers();
+  }
+}
+
+async function delUser(row, name) {
+  const r = await Swal.fire({title:'ยืนยันการลบ?',text:`ลบ "${name}"`,icon:'warning',showCancelButton:true,confirmButtonText:'ลบ',cancelButtonText:'ยกเลิก',confirmButtonColor:'#d94040'});
+  if (r.isConfirmed) { showLoading(); const res = await api('deleteUser',{row}); if(res.success){showOk(res.message);loadUsers();}else showErr(res.message); }
+}
+
+async function openAddUserModal() {
+  document.getElementById('addUserForm').reset();
+  const depts = await api('getDepartments');
+  document.getElementById('uDept').innerHTML = '<option value="">— เลือก —</option>' + (depts||[]).map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addUserModal')).show();
+}
+
+async function handleAddUser(e) {
+  e.preventDefault(); showLoading('กำลังเพิ่มผู้ใช้...');
+  try {
+    const res = await api('addUser', {
+      prefix: document.getElementById('uPrefix').value,
+      firstname: document.getElementById('uFirst').value,
+      lastname: document.getElementById('uLast').value,
+      department: document.getElementById('uDept').value,
+      role: document.getElementById('uRole').value,
+      phone: document.getElementById('uPhone').value,
+    });
+    if (res.success) { showOk(res.message); bootstrap.Modal.getOrCreateInstance(document.getElementById('addUserModal')).hide(); loadUsers(); initPinScreen(); }
+    else showErr(res.message);
+  } catch(e) { Swal.close(); showErr(e.message); }
+}
+
+// ── DEPARTMENTS / CATEGORIES / SUPPLIERS ─────────────────
+async function loadDepts() {
+  const tb = document.getElementById('deptTb'); if (!tb) return;
+  tb.innerHTML = loadR(5);
+  const depts = await api('getDepartments');
+  if (!depts || !depts.length) { tb.innerHTML = emptyR(5,'ไม่มีข้อมูล'); return; }
+  tb.innerHTML = depts.map(d=>`<tr>
+    <td class="mono txt-s">${d.id}</td><td><b>${d.name}</b></td>
+    <td class="mono">${d.code||'-'}</td>
+    <td>${d.status==='Active'?'<span class="badge bs">ใช้งาน</span>':'<span class="badge bd">ยกเลิก</span>'}</td>
+    <td><button class="btn btn-ghost btn-icon btn-sm" onclick="openDeptModal('${encodeURIComponent(JSON.stringify(d))}')">✏️</button></td>
+  </tr>`).join('');
+}
+function openDeptModal(enc) {
+  document.getElementById('deptForm').reset(); document.getElementById('dRow').value='';
+  document.getElementById('deptModalTitle').textContent='➕ เพิ่มฝ่าย/แผนก';
+  if(enc){const d=JSON.parse(decodeURIComponent(enc));document.getElementById('deptModalTitle').textContent='✏️ แก้ไข: '+d.name;document.getElementById('dRow').value=d.row;document.getElementById('dName').value=d.name;document.getElementById('dCode').value=d.code||'';}
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).show();
+}
+async function handleDept(e) {
+  e.preventDefault(); showLoading();
+  const res = await api('saveDepartment',{row:document.getElementById('dRow').value,name:document.getElementById('dName').value,code:document.getElementById('dCode').value,status:'Active'});
+  if(res.success){showOk(res.message);bootstrap.Modal.getOrCreateInstance(document.getElementById('deptModal')).hide();loadDepts();}else showErr(res.message);
+}
+
+async function loadCats() {
+  const tb = document.getElementById('catTb'); if (!tb) return;
+  tb.innerHTML = loadR(5);
+  const cats = await api('getCategories');
+  if (!cats || !cats.length) { tb.innerHTML = emptyR(5,'ไม่มีข้อมูล'); return; }
+  tb.innerHTML = cats.map(c=>`<tr>
+    <td class="mono txt-s">${c.id}</td><td><b>${c.name}</b></td>
+    <td class="txt-s">${c.description||'-'}</td>
+    <td>${c.status==='Active'?'<span class="badge bs">ใช้งาน</span>':'<span class="badge bd">ยกเลิก</span>'}</td>
+    <td><button class="btn btn-ghost btn-icon btn-sm" onclick="openCatModal('${encodeURIComponent(JSON.stringify(c))}')">✏️</button></td>
+  </tr>`).join('');
+}
+function openCatModal(enc) {
+  document.getElementById('catForm').reset(); document.getElementById('cRow').value='';
+  document.getElementById('catModalTitle').textContent='➕ เพิ่มหมวดหมู่';
+  if(enc){const c=JSON.parse(decodeURIComponent(enc));document.getElementById('catModalTitle').textContent='✏️ แก้ไข: '+c.name;document.getElementById('cRow').value=c.row;document.getElementById('cName').value=c.name;document.getElementById('cDesc').value=c.description||'';}
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('catModal')).show();
+}
+async function handleCat(e) {
+  e.preventDefault(); showLoading();
+  const res = await api('saveCategory',{row:document.getElementById('cRow').value,name:document.getElementById('cName').value,description:document.getElementById('cDesc').value,status:'Active'});
+  if(res.success){showOk(res.message);bootstrap.Modal.getOrCreateInstance(document.getElementById('catModal')).hide();loadCats();}else showErr(res.message);
+}
+
+async function loadSups() {
+  const tb = document.getElementById('supTb'); if (!tb) return;
+  tb.innerHTML = loadR(6);
+  const sups = await api('getSuppliers');
+  if (!sups || !sups.length) { tb.innerHTML = emptyR(6,'ไม่มีข้อมูล'); return; }
+  tb.innerHTML = sups.map(s=>`<tr>
+    <td class="mono txt-s">${s.id}</td><td><b>${s.name}</b></td>
+    <td>${s.contact||'-'}</td><td class="mono">${s.phone||'-'}</td>
+    <td>${s.status==='Active'?'<span class="badge bs">ใช้งาน</span>':'<span class="badge bd">ยกเลิก</span>'}</td>
+    <td><button class="btn btn-ghost btn-icon btn-sm" onclick="openSupModal('${encodeURIComponent(JSON.stringify(s))}')">✏️</button></td>
+  </tr>`).join('');
+}
+function openSupModal(enc) {
+  document.getElementById('supForm').reset(); document.getElementById('supRow').value='';
+  document.getElementById('supModalTitle').textContent='➕ ซัพพลายเออร์';
+  if(enc){const s=JSON.parse(decodeURIComponent(enc));document.getElementById('supModalTitle').textContent='✏️ แก้ไข: '+s.name;document.getElementById('supRow').value=s.row;document.getElementById('supName').value=s.name;document.getElementById('supContact').value=s.contact||'';document.getElementById('supPhone').value=s.phone||'';}
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('supModal')).show();
+}
+async function handleSup(e) {
+  e.preventDefault(); showLoading();
+  const res = await api('saveSupplier',{row:document.getElementById('supRow').value,name:document.getElementById('supName').value,contact:document.getElementById('supContact').value,phone:document.getElementById('supPhone').value,status:'Active'});
+  if(res.success){showOk(res.message);bootstrap.Modal.getOrCreateInstance(document.getElementById('supModal')).hide();loadSups();}else showErr(res.message);
+}
+
+// ── SETTINGS ─────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const s = await api('getSettings');
+    const name = s.webName || 'ระบบจัดการพัสดุ';
+    const logo = s.logoEmoji || '📦';
+    document.getElementById('sidebarTitle').textContent = name;
+    document.getElementById('sidebarLogo').textContent  = logo;
+    document.getElementById('pinLogo').textContent      = logo;
+    document.getElementById('pinTitle').textContent     = name;
+    document.title = name;
+    if (s.orgName) document.querySelector('.topbar-clock').style.display = '';
+    if (document.getElementById('setName')) {
+      document.getElementById('setName').value   = name;
+      document.getElementById('setLogo').value   = logo;
+      document.getElementById('setOrg').value    = s.orgName || '';
+      document.getElementById('setMaxQty').value = s.maxRequestQty || 100;
+      document.getElementById('setReqApv').value = s.requireApproval || 'true';
+    }
+  } catch(e){}
+}
+
+async function handleSettings(e) {
+  e.preventDefault(); showLoading('กำลังบันทึก...');
+  const res = await api('saveSettings', {
+    webName: document.getElementById('setName').value,
+    logoEmoji: document.getElementById('setLogo').value,
+    orgName: document.getElementById('setOrg').value,
+    maxRequestQty: document.getElementById('setMaxQty').value,
+    requireApproval: document.getElementById('setReqApv').value
+  });
+  if (res.success) { showOk(res.message); loadSettings(); } else showErr(res.message);
+}
+
+function switchStab(idx) {
+  document.querySelectorAll('.stab').forEach((s,i) => s.classList.toggle('active', i===idx));
+  document.querySelectorAll('.stab-panel').forEach((p,i) => p.style.display = i===idx?'':'none');
+}
+
+async function saveLineToken() {
+  const t = document.getElementById('lineToken').value.trim();
+  if (!t) { showErr('กรุณาใส่ Token'); return; }
+  showLoading('กำลังบันทึก...');
+  const res = await api('saveLineToken', {token: t});
+  if (res.success) { showOk(res.message); document.getElementById('lineToken').value=''; document.getElementById('lineStatus').textContent='✅ Token บันทึกแล้ว'; }
+  else showErr(res.message);
+}
+
+async function testLine() {
+  showLoading('กำลังส่ง...');
+  const res = await api('testLineNotify', {message:'✅ ทดสอบแจ้งเตือนจากระบบจัดการพัสดุ'});
+  if (res.success) { showOk('ส่งสำเร็จ! ตรวจสอบ LINE ของคุณ'); document.getElementById('lineStatus').textContent='✅ ส่งสำเร็จ '+new Date().toLocaleTimeString(); }
+  else showErr(res.message);
+}
+
+// ── TOOLS ─────────────────────────────────────────────────
+async function doRebuild() {
+  const r = await Swal.fire({title:'Rebuild StockBalance?',icon:'warning',showCancelButton:true,confirmButtonText:'ดำเนินการ',cancelButtonText:'ยกเลิก',confirmButtonColor:'#d94040'});
+  if (r.isConfirmed) { showLoading('กำลัง Rebuild...'); const res=await api('rebuildStockBalance'); if(res.success)showOk(res.message);else showErr(res.message); }
+}
+
+async function exportCSV() {
+  showLoading('กำลังโหลด...');
+  const res = await api('getSummaryData');
+  Swal.close();
+  if (!res.success) { showErr(res.message); return; }
+  const header = ['รหัส','บาร์โค้ด','หมวดหมู่','ชื่อพัสดุ','หน่วย','ราคา','คงเหลือ','Min','Max','ที่เก็บ','มูลค่ารวม'];
+  const rows   = res.data.map(d=>[d.id,d.barcode,d.category,d.name,d.unit,d.price,d.stock,d.minStock,d.maxStock||0,d.location||'',(d.price*d.stock).toFixed(2)]);
+  const csv = '\uFEFF' + header.join(',') + '\n' + rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`stock_${new Date().toLocaleDateString('th-TH').replace(/\//g,'-')}.csv`; a.click();
+  showOk('Export สำเร็จ');
+}
+
+function previewImport(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    let text = e.target.result.replace(/^\uFEFF/,'');
+    const lines = text.split(/\r?\n/).filter(l=>l.trim());
+    if (lines.length < 2) { showErr('ไม่พบข้อมูล'); return; }
+    const hdrs = lines[0].split(',').map(h=>h.trim().replace(/["*]/g,'').toLowerCase().replace(/\s/g,''));
+    const fi = n => hdrs.indexOf(n);
+    IMPORT_DATA = [];
+    for (let i=1;i<lines.length;i++) {
+      const vals = lines[i].match(/("([^"]|"")*"|[^,]*)/g).map(v=>v.replace(/^"|"$/g,'').replace(/""/g,'"').trim());
+      const name = vals[fi('name')]||vals[fi('name*')]||'';
+      if (!name) continue;
+      IMPORT_DATA.push({name,barcode:vals[fi('barcode')]||'',category:vals[fi('category')]||'',unit:vals[fi('unit')]||vals[fi('unit*')]||'ชิ้น',price:Number(vals[fi('price')])||0,minStock:Number(vals[fi('minstock')])||5,initialStock:Number(vals[fi('initialstock')])||0});
+    }
+    document.getElementById('importSummaryTxt').textContent = `พบ ${IMPORT_DATA.length} รายการ`;
+    document.getElementById('importPreview').style.display = '';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+async function doImport() {
+  if (!IMPORT_DATA.length) { showErr('ไม่มีข้อมูล'); return; }
+  const r = await Swal.fire({title:`นำเข้า ${IMPORT_DATA.length} รายการ?`,icon:'question',showCancelButton:true,confirmButtonText:'นำเข้า',cancelButtonText:'ยกเลิก'});
+  if (!r.isConfirmed) return;
+  showLoading('กำลังนำเข้า...');
+  const res = await api('importProducts',{rows:IMPORT_DATA});
+  if (res.success) { showOk(res.message); document.getElementById('importFile').value=''; document.getElementById('importPreview').style.display='none'; IMPORT_DATA=[]; loadProducts(); }
+  else showErr(res.message);
+}
+
+// ── CHANGE PIN (Profile) ──────────────────────────────────
+async function handleChangePin(e) {
+  e.preventDefault();
+  const old = document.getElementById('pinOld').value;
+  const n1  = document.getElementById('pinNewA').value;
+  const n2  = document.getElementById('pinNewB').value;
+  if (n1 !== n2) { showErr('PIN ใหม่ไม่ตรงกัน'); return; }
+  showLoading('กำลังเปลี่ยน...');
+  const res = await api('changePin', {userId: CU.id, oldPin: old, newPin: n1});
+  if (res.success) { showOk(res.message); document.getElementById('pinOld').value=''; document.getElementById('pinNewA').value=''; document.getElementById('pinNewB').value=''; }
+  else showErr(res.message);
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+function loadR(c) { return `<tr><td colspan="${c}" style="text-align:center;padding:36px"><div class="spin-sm"></div> กำลังโหลด...</td></tr>`; }
+function emptyR(c,m) { return `<tr><td colspan="${c}" style="text-align:center;padding:36px;color:var(--muted)">${m}</td></tr>`; }
+function showLoading(msg) { Swal.fire({title:msg||'กำลังดำเนินการ...',allowOutsideClick:false,didOpen:()=>Swal.showLoading()}); }
+function showOk(msg)     { Swal.fire({icon:'success',title:'สำเร็จ!',text:msg,timer:2200,showConfirmButton:false}); }
+function showErr(msg)    { Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:String(msg||'Unknown error')}); }
+
+// Shake animation for PIN
+const style = document.createElement('style');
+style.textContent = '@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
